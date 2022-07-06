@@ -1,0 +1,117 @@
+# stages
+stages:
+  - build
+  - test
+  - deploy
+before_script:
+  - echo "[NOTICE]通用-开始初始化"
+  - go env -w GO111MODULE=on
+  - go env -w GOPROXY=https://goproxy.cn/,direct
+  - echo "[NOTICE]通用-初始化完成"
+# 定义变量
+variables:
+  # 服务名
+  WGGOSERVICE: wggoservice
+ # 可执行文件名称
+  WGGOSERVICE_API: wggoservice-api
+
+  # 可执行文件存放目录
+  EXE_DIR_PROD: /data1/vhosts/wg_goservice/htdocs
+  EXE_DIR_BCH: /data1/vhosts/wg_bch_goservice/htdocs
+#定义缓存,缓存可执行文件
+cache:
+  key: binaries-cache
+  paths:
+  - $WGGOSERVICE_API
+  
+# 测试线
+job_bch_build:
+  stage: build
+  tags:
+    - wggoservice_bch_runner
+  script:
+    - echo "[NOTICE]测试线-开始编译"
+    # 编译文件
+    - go build -o $WGGOSERVICE_API ./main.go
+    - echo "[NOTICE]测试线-编译完成"
+  only:
+    - develop
+job_bch_test:
+  stage: test
+  tags:
+    - wggoservice_bch_runner
+  script:
+    - echo echo "[NOTICE]测试线-测试完成"
+  only:
+    - develop
+job_bch_deploy:
+  stage: deploy
+  tags:
+    - wggoservice_bch_runner
+  # 仅拉取缓存
+  cache:
+    key: binaries-cache
+    paths:
+    - $WGGOSERVICE_API
+    policy: pull
+  before_script:
+    - if [ ! -d $EXE_DIR_BCH ];then
+      mkdir -p $EXE_DIR_BCH;
+      fi
+  script:
+    - echo "[NOTICE]测试线-开始部署"
+    - mv ./$WGGOSERVICE_API $EXE_DIR_BCH
+    # 复制配置文件
+    - mkdir -p  /data1/vhosts/wg_bch_goservice/htdocs/config
+    - cp ./config/config.yaml ${EXE_DIR_BCH}/config/
+    - cd $EXE_DIR_BCH
+    - ls -l
+    - echo "[NOTICE]测试线-部署完成"
+  only:
+    - develop
+# 生产环境
+job_build:
+  stage: build
+  tags:
+    - wggoservice_runner
+  script:
+    - echo "[NOTICE]生产线-开始编译"
+    # 编译文件
+    - go build -o $WGGOSERVICE_API ./main.go
+    - echo "[NOTICE]生产线-编译完成"
+  only:
+    - master
+job_test:
+  stage: test
+  tags:
+    - wggoservice_runner
+  script:
+    - echo echo "[NOTICE]生产线-测试完成"
+  only:
+    - master
+job_deploy:
+  stage: deploy
+  tags:
+    - wggoservice_runner
+  # 仅拉取缓存
+  cache:
+    key: binaries-cache
+    paths:
+    - $WGGOSERVICE_API
+    policy: pull
+  before_script:
+    - if [ ! -d $EXE_DIR_PROD ];then
+      mkdir -p $EXE_DIR_PROD;
+      fi
+  script:
+    - echo "[NOTICE]生产线-开始部署"
+    # 移动可执行文件
+    - mv ./$WGGOSERVICE_API $EXE_DIR_PROD
+    # 复制配置文件
+    - mkdir -p  ${EXE_DIR_PROD}/config
+    - cp ./config/config.yaml ${EXE_DIR_PROD}/config/
+    - cd $EXE_DIR_PROD
+    - ls -l
+    - echo "[NOTICE]生产线-部署完成"
+  only:
+    - master
