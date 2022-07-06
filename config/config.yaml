@@ -1,0 +1,26 @@
+Database:
+  DBType: mysql
+  UserName: root
+  Password: 
+  Host: 127.0.0.1:3306
+  DBName: wg_leju_com
+  Charset: utf8
+  ParseTime: True
+  MaxIdleConns: 10
+  MaxOpenConns: 30
+Server:
+  RunMode: debug
+  HttpPort: 8000
+  ReadTimeout: 60
+  WriteTimeout: 60
+Redis:
+  Addr: 127.0.0.1:6379
+  Password:
+Logs:
+  LogPath: "runtime/logs"
+  MaxSize: 256
+  MaxBackups: 100
+  MaxAge: 30
+  IsWeb: True
+  Compress: false 
+  DefaultCategory: "wg-api"
